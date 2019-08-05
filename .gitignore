@@ -1,5 +1,5 @@
 /target
 **/*.rs.bk
 
-tmp
-tmp.s
+test
+test.s
