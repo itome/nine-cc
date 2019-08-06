@@ -3,15 +3,7 @@ use std::env;
 use std::process::exit;
 
 #[derive(Debug)]
-enum TokenKind {
-    Operator,
-    Number,
-    Eof,
-}
-
-#[derive(Debug)]
 struct Token {
-    kind: TokenKind,
     value: Option<i64>,
     operator: Option<char>,
 }
@@ -28,7 +20,6 @@ fn tokenize(input: String) -> Vec<Token> {
 
         if c == '+' || c == '-' {
             let token = Token {
-                kind: TokenKind::Operator,
                 value: None,
                 operator: Some(c),
             };
@@ -41,7 +32,6 @@ fn tokenize(input: String) -> Vec<Token> {
             let (num, remaining) = strtol(&input);
             input = remaining;
             let token = Token {
-                kind: TokenKind::Number,
                 value: num,
                 operator: None,
             };
@@ -54,7 +44,6 @@ fn tokenize(input: String) -> Vec<Token> {
     }
 
     tokens.push(Token {
-        kind: TokenKind::Eof,
         value: None,
         operator: None,
     });
@@ -75,22 +64,21 @@ fn main() {
             println!("  mov rax, {}", token.value.unwrap());
             continue;
         }
-        match token.kind {
-            TokenKind::Number => match tokens[index - 1].operator {
+        if let Some(value) = token.value {
+            match tokens[index - 1].operator {
                 Some('+') => {
-                    println!("  add rax, {}", token.value.unwrap());
+                    println!("  add rax, {}", value);
                 }
                 Some('-') => {
-                    println!("  sub rax, {}", token.value.unwrap());
+                    println!("  sub rax, {}", value);
                 }
                 Some(_) | None => {
-                    panic!("operator not found");
+                    println!("operator not found");
                 }
-            },
-            TokenKind::Operator => {}
-            TokenKind::Eof => {
-                println!("  ret");
             }
+        }
+        if token.value == None && token.operator == None {
+            println!("  ret");
         }
     }
 }

@@ -3,3 +3,5 @@ test:
 
 clean:
 	rm -f *~ tmp*
+
+.PHONY: test clean
