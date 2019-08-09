@@ -95,7 +95,7 @@ impl Node {
                 .iter()
                 .position(|token| token.operator == Some(')'))
                 .unwrap();
-            let mut exp = tokens[1..(close_index - 1)].to_vec();
+            let mut exp = tokens[1..close_index].to_vec();
             tokens.drain(0..close_index);
             return Node::expr(&mut exp);
         } else {
