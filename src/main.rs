@@ -2,10 +2,85 @@ use nine_cc::strtol;
 use std::env;
 use std::process::exit;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Token {
     value: Option<i64>,
     operator: Option<char>,
+}
+
+struct Node {
+    lhs: Option<Box<Node>>,
+    rhs: Option<Box<Node>>,
+    number: Option<i64>,
+    operator: Option<char>,
+}
+
+impl Node {
+    fn operator(op: char, lhs: Node, rhs: Node) -> Self {
+        Node {
+            lhs: Some(lhs),
+            rhs: Some(rhs),
+            number: None,
+            operator: Some(op),
+        }
+    }
+
+    fn number(num: i64) -> Self {
+        Node {
+            lhs: None,
+            rhs: None,
+            number: Some(num),
+            operator: None,
+        }
+    }
+
+    fn expr(mut tokens: Vec<Token>) -> (Self, Vec<Token>) {
+        let (mut node, tokens) = Node::mul(tokens);
+
+        for token in tokens {
+            match token.operator {
+                Some('+') => {
+                    let (rhs, tokens) = Node::mul(tokens[1..].to_vec());
+                    node = Node::operator('+', node, rhs);
+                }
+                Some('-') => {
+                    let (rhs, tokens) = Node::mul(tokens[1..].to_vec());
+                    node = Node::operator('-', node, rhs);
+                }
+            }
+        }
+        return (node, tokens);
+    }
+
+    fn mul(mut tokens: Vec<Token>) -> (Self, Vec<Token>) {
+        let (mut node, tokens) = Node::term(tokens);
+
+        for token in tokens {
+            match token.operator {
+                Some('*') => {
+                    let (rhs, tokens) = Node::term(tokens[1..].to_vec());
+                    node = Node::operator('*', node, rhs);
+                }
+                Some('/') => {
+                    let (rhs, tokens) = Node::term(tokens[1..].to_vec());
+                    node = Node::operator('/', node, rhs);
+                }
+            }
+        }
+        return (node, tokens);
+    }
+
+    fn term(tokens: Vec<Token>) -> (Self, Vec<Token>) {
+        if tokens[0].operator == Some('(') {
+            let close_index = tokens
+                .iter()
+                .position(|token| token.operator == Some(')'))
+                .unwrap();
+            return Node::expr(tokens[1..(close_index - 1)].to_vec());
+        } else {
+            return (Node::number(tokens[0].value.unwrap()), tokens[1..].to_vec());
+        };
+    }
 }
 
 fn tokenize(input: String) -> Vec<Token> {
