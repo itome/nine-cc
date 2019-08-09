@@ -18,8 +18,8 @@ struct Node {
 impl Node {
     fn operator(op: char, lhs: Node, rhs: Node) -> Self {
         Node {
-            lhs: Some(lhs),
-            rhs: Some(rhs),
+            lhs: Some(Box::new(lhs)),
+            rhs: Some(Box::new(rhs)),
             number: None,
             operator: Some(op),
         }
@@ -58,11 +58,11 @@ impl Node {
         for token in tokens {
             match token.operator {
                 Some('*') => {
-                    let (rhs, tokens) = Node::term(tokens[1..].to_vec());
+                    let (rhs, _tokens) = Node::term(tokens[1..].to_vec());
                     node = Node::operator('*', node, rhs);
                 }
                 Some('/') => {
-                    let (rhs, tokens) = Node::term(tokens[1..].to_vec());
+                    let (rhs, _tokens) = Node::term(tokens[1..].to_vec());
                     node = Node::operator('/', node, rhs);
                 }
             }
