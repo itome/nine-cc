@@ -63,7 +63,7 @@ impl Node {
     }
 
     fn mul(tokens: &mut Vec<Token>) -> Self {
-        let mut node = Node::term(tokens);
+        let mut node = Node::unary(tokens);
 
         loop {
             if tokens.len() == 0 {
@@ -73,12 +73,12 @@ impl Node {
             match token.operator {
                 Some('*') => {
                     tokens.remove(0);
-                    let rhs = Node::term(tokens);
+                    let rhs = Node::unary(tokens);
                     node = Node::operator('*', node, rhs);
                 }
                 Some('/') => {
                     tokens.remove(0);
-                    let rhs = Node::term(tokens);
+                    let rhs = Node::unary(tokens);
                     node = Node::operator('/', node, rhs);
                 }
                 _ => {
@@ -87,6 +87,23 @@ impl Node {
             }
         }
         return node;
+    }
+
+    fn unary(tokens: &mut Vec<Token>) -> Self {
+        let token = &tokens[0];
+        match token.operator {
+            Some('+') => {
+                tokens.remove(0);
+                return Node::term(tokens);
+            }
+            Some('-') => {
+                tokens.remove(0);
+                return Node::operator('-', Node::number(0), Node::term(tokens));
+            }
+            _ => {
+                return Node::term(tokens);
+            }
+        }
     }
 
     fn term(tokens: &mut Vec<Token>) -> Self {
