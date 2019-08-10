@@ -96,7 +96,7 @@ impl Node {
                 .position(|token| token.operator == Some(')'))
                 .unwrap();
             let mut exp = tokens[1..close_index].to_vec();
-            tokens.drain(0..close_index);
+            tokens.drain(0..(close_index + 1));
             return Node::expr(&mut exp);
         } else {
             let num = tokens[0].value.unwrap();
@@ -149,10 +149,50 @@ fn tokenize(input: String) -> Vec<Token> {
     return tokens;
 }
 
+fn gen(node: &Node) {
+    if let Some(num) = node.number {
+        println!("  push {}", num);
+        return;
+    }
+
+    if let Some(rhs) = &node.rhs {
+        gen(&rhs);
+    }
+    if let Some(lhs) = &node.lhs {
+        gen(&lhs);
+    }
+    println!("  pop rax");
+    println!("  pop rdi");
+
+    match &node.operator {
+        Some('+') => {
+            println!("  add rax, rdi");
+        }
+        Some('-') => {
+            println!("  sub rax, rdi");
+        }
+        Some('*') => {
+            println!("  imul rax, rdi");
+        }
+        Some('/') => {
+            println!("  cqo");
+            println!("  idiv rdi");
+        }
+        _ => {
+        }
+    }
+    println!("  push rax");
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let arg: &String = &args[1];
     let mut tokens = tokenize(arg.to_string());
     let expr = Node::expr(&mut tokens);
-    println!("{:?}", expr);
+    println!(".intel_syntax noprefix");
+    println!(".global main");
+    println!("main:");
+    gen(&expr);
+    println!("  pop rax");
+    println!("  ret");
 }
