@@ -3,7 +3,7 @@ use std::process::exit;
 #[derive(Debug, Clone)]
 pub struct Token {
     pub value: Option<i64>,
-    pub operator: Option<char>,
+    pub operator: Option<String>,
 }
 
 impl Token {
@@ -11,16 +11,27 @@ impl Token {
         let mut tokens: Vec<Token> = vec![];
 
         let mut input = input.clone();
+        let mut current_token = String::from("");
         while let Some(c) = input.chars().nth(0) {
             if c.is_whitespace() {
                 input = input.split_off(1);
                 continue;
             }
 
+            if c == '=' && current_token.len() > 0 {
+                let token = Token {
+                    value: None,
+                    operator: Some(current_token.clone() + &c.to_string()),
+                };
+                current_token = String::from("");
+                tokens.push(token);
+                continue;
+            }
+
             if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
                 let token = Token {
                     value: None,
-                    operator: Some(c),
+                    operator: Some(c.to_string()),
                 };
                 input = input.split_off(1);
                 tokens.push(token);

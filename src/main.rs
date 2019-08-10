@@ -21,18 +21,24 @@ fn gen(node: &Node) {
     println!("  pop rdi");
 
     match &node.operator {
-        Some('+') => {
-            println!("  add rax, rdi");
-        }
-        Some('-') => {
-            println!("  sub rax, rdi");
-        }
-        Some('*') => {
-            println!("  imul rax, rdi");
-        }
-        Some('/') => {
-            println!("  cqo");
-            println!("  idiv rdi");
+        Some(op) => {
+            match op.as_ref() {
+                "+" => {
+                    println!("  add rax, rdi");
+                }
+                "-" => {
+                    println!("  sub rax, rdi");
+                }
+                "*" => {
+                    println!("  imul rax, rdi");
+                }
+                "/" => {
+                    println!("  cqo");
+                    println!("  idiv rdi");
+                }
+                _ => {
+                }
+            }
         }
         _ => {
         }
