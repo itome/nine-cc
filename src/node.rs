@@ -28,6 +28,84 @@ impl Node {
     }
 
     pub fn expr(tokens: &mut Vec<Token>) -> Self {
+        return Node::equality(tokens);
+    }
+
+    fn equality(tokens: &mut Vec<Token>) -> Self {
+        let mut node = Node::relational(tokens);
+
+        loop {
+            if tokens.len() == 0 {
+                break;
+            }
+            let token = &tokens[0];
+            match &token.operator {
+                Some(op) => match op.as_ref() {
+                    "==" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator("==".to_string(), node, rhs);
+                    }
+                    "!=" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator("!=".to_string(), node, rhs);
+                    }
+                    _ => {
+                        break;
+                    }
+                },
+                _ => {
+                    break;
+                }
+            }
+        }
+        return node;
+    }
+
+    fn relational(tokens: &mut Vec<Token>) -> Self {
+        let mut node = Node::add(tokens);
+
+        loop {
+            if tokens.len() == 0 {
+                break;
+            }
+            let token = &tokens[0];
+            match &token.operator {
+                Some(op) => match op.as_ref() {
+                    "<=" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator("<=".to_string(), node, rhs);
+                    }
+                    ">=" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator(">=".to_string(), node, rhs);
+                    }
+                    "<" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator("<".to_string(), node, rhs);
+                    }
+                    ">" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator(">".to_string(), node, rhs);
+                    }
+                    _ => {
+                        break;
+                    }
+                },
+                _ => {
+                    break;
+                }
+            }
+        }
+        return node;
+    }
+
+    fn add(tokens: &mut Vec<Token>) -> Self {
         let mut node = Node::mul(tokens);
 
         loop {
@@ -130,7 +208,7 @@ impl Node {
                     tokens.remove(0);
                     return Node::number(num);
                 }
-            }
+            },
             _ => {
                 let num = tokens[0].value.unwrap();
                 tokens.remove(0);
