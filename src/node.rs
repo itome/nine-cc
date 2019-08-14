@@ -73,25 +73,25 @@ impl Node {
             let token = &tokens[0];
             match &token.operator {
                 Some(op) => match op.as_ref() {
-                    "<=" => {
-                        tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("<=".to_string(), node, rhs);
-                    }
-                    ">=" => {
-                        tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator(">=".to_string(), node, rhs);
-                    }
                     "<" => {
                         tokens.remove(0);
                         let rhs = Node::mul(tokens);
                         node = Node::operator("<".to_string(), node, rhs);
                     }
+                    "<=" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator("<=".to_string(), node, rhs);
+                    }
                     ">" => {
                         tokens.remove(0);
                         let rhs = Node::mul(tokens);
-                        node = Node::operator(">".to_string(), node, rhs);
+                        node = Node::operator("<".to_string(), rhs, node);
+                    }
+                    ">=" => {
+                        tokens.remove(0);
+                        let rhs = Node::mul(tokens);
+                        node = Node::operator("<=".to_string(), rhs, node);
                     }
                     _ => {
                         break;

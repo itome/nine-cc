@@ -1,9 +1,9 @@
-mod token;
 mod node;
+mod token;
 
 use node::Node;
-use token::Token;
 use std::env;
+use token::Token;
 
 fn gen(node: &Node) {
     if let Some(num) = node.number {
@@ -21,27 +21,43 @@ fn gen(node: &Node) {
     println!("  pop rdi");
 
     match &node.operator {
-        Some(op) => {
-            match op.as_ref() {
-                "+" => {
-                    println!("  add rax, rdi");
-                }
-                "-" => {
-                    println!("  sub rax, rdi");
-                }
-                "*" => {
-                    println!("  imul rax, rdi");
-                }
-                "/" => {
-                    println!("  cqo");
-                    println!("  idiv rdi");
-                }
-                _ => {
-                }
+        Some(op) => match op.as_ref() {
+            "+" => {
+                println!("  add rax, rdi");
             }
-        }
-        _ => {
-        }
+            "-" => {
+                println!("  sub rax, rdi");
+            }
+            "*" => {
+                println!("  imul rax, rdi");
+            }
+            "/" => {
+                println!("  cqo");
+                println!("  idiv rdi");
+            }
+            "==" => {
+                println!("  cmp rax, rdi");
+                println!("  sete al");
+                println!("  movzb rax, al",);
+            }
+            "!=" => {
+                println!("  cmp rax, rdi");
+                println!("  setne al");
+                println!("  movzb rax, al",);
+            }
+            "<" => {
+                println!("  cmp rax, rdi");
+                println!("  setl al");
+                println!("  movzb rax, al",);
+            }
+            "<=" => {
+                println!("  cmp rax, rdi");
+                println!("  setle al");
+                println!("  movzb rax, al",);
+            }
+            _ => {}
+        },
+        _ => {}
     }
     println!("  push rax");
 }

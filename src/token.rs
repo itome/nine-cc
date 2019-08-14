@@ -18,6 +18,15 @@ impl Token {
                 continue;
             }
 
+            if (current_token == ">" || current_token == "<") && c != '=' {
+                let token = Token {
+                    value: None,
+                    operator: Some(current_token.clone() + &c.to_string()),
+                };
+                current_token = String::from("");
+                tokens.push(token);
+            }
+
             if c == '=' && current_token.len() > 0 {
                 let token = Token {
                     value: None,
@@ -25,6 +34,11 @@ impl Token {
                 };
                 current_token = String::from("");
                 tokens.push(token);
+                continue;
+            }
+
+            if c == '=' || c == '!' || c == '<' || c == '>' {
+                current_token = c.to_string();
                 continue;
             }
 
