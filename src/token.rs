@@ -2,11 +2,31 @@ use std::process::exit;
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    pub value: Option<i64>,
+    pub number: Option<i64>,
     pub operator: Option<String>,
 }
 
+impl PartialEq for Token {
+    fn eq(&self, other: &Self) -> bool {
+        self.number == other.number && self.operator == other.operator
+    }
+}
+
 impl Token {
+    fn operator(op: String) -> Self {
+        Token {
+            number: None,
+            operator: Some(op),
+        }
+    }
+
+    fn number(num: i64) -> Self {
+        Token {
+            number: Some(num),
+            operator: None,
+        }
+    }
+
     pub fn parse(input: String) -> Vec<Token> {
         let mut tokens: Vec<Token> = vec![];
 
@@ -20,7 +40,7 @@ impl Token {
 
             if (current_token == ">" || current_token == "<") && c != '=' {
                 let token = Token {
-                    value: None,
+                    number: None,
                     operator: Some(current_token.clone() + &c.to_string()),
                 };
                 current_token = String::from("");
@@ -29,7 +49,7 @@ impl Token {
 
             if c == '=' && current_token.len() > 0 {
                 let token = Token {
-                    value: None,
+                    number: None,
                     operator: Some(current_token.clone() + &c.to_string()),
                 };
                 current_token = String::from("");
@@ -44,7 +64,7 @@ impl Token {
 
             if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
                 let token = Token {
-                    value: None,
+                    number: None,
                     operator: Some(c.to_string()),
                 };
                 input = input.split_off(1);
@@ -56,7 +76,7 @@ impl Token {
                 let (num, remaining) = strtol(&input);
                 input = remaining;
                 let token = Token {
-                    value: num,
+                    number: num,
                     operator: None,
                 };
                 tokens.push(token);
@@ -68,7 +88,7 @@ impl Token {
         }
 
         tokens.push(Token {
-            value: None,
+            number: None,
             operator: None,
         });
 
@@ -97,5 +117,81 @@ fn strtol(s: &String) -> (Option<i64>, String) {
     } else {
         let t: String = remaining.drain(..pos).collect();
         (Some(t.parse::<i64>().unwrap()), remaining)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::token::Token;
+
+    #[test]
+    fn plus() {
+        let input = "1 + 4";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::number(1));
+        assert_eq!(output[1], Token::operator("+".to_string()));
+        assert_eq!(output[2], Token::number(4));
+    }
+
+    #[test]
+    fn minus() {
+        let input = "3 - 2";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::number(3));
+        assert_eq!(output[1], Token::operator("-".to_string()));
+        assert_eq!(output[2], Token::number(2));
+    }
+
+    #[test]
+    fn mul() {
+        let input = "4 * 4";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::number(4));
+        assert_eq!(output[1], Token::operator("*".to_string()));
+        assert_eq!(output[2], Token::number(4));
+    }
+
+    #[test]
+    fn div() {
+        let input = "4 / 4";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::number(4));
+        assert_eq!(output[1], Token::operator("/".to_string()));
+        assert_eq!(output[2], Token::number(4));
+    }
+
+    #[test]
+    fn plus_and_mul() {
+        let input = "1 + 4 * 4 - 1";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::number(1));
+        assert_eq!(output[1], Token::operator("+".to_string()));
+        assert_eq!(output[2], Token::number(4));
+        assert_eq!(output[3], Token::operator("*".to_string()));
+        assert_eq!(output[4], Token::number(4));
+        assert_eq!(output[5], Token::operator("-".to_string()));
+        assert_eq!(output[6], Token::number(1));
+    }
+
+    #[test]
+    fn brackets() {
+        let input = "(1 + 4) * 2";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::operator("(".to_string()));
+        assert_eq!(output[1], Token::number(1));
+        assert_eq!(output[2], Token::operator("+".to_string()));
+        assert_eq!(output[3], Token::number(4));
+        assert_eq!(output[4], Token::operator(")".to_string()));
+        assert_eq!(output[5], Token::operator("*".to_string()));
+        assert_eq!(output[6], Token::number(2));
+    }
+
+    #[test]
+    fn two_digit() {
+        let input = "15 + 40";
+        let output = Token::parse(input.to_string());
+        assert_eq!(output[0], Token::number(15));
+        assert_eq!(output[1], Token::operator("+".to_string()));
+        assert_eq!(output[2], Token::number(40));
     }
 }

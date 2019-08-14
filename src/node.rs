@@ -204,13 +204,13 @@ impl Node {
                     return Node::expr(&mut exp);
                 }
                 _ => {
-                    let num = tokens[0].value.unwrap();
+                    let num = tokens[0].number.unwrap();
                     tokens.remove(0);
                     return Node::number(num);
                 }
             },
             _ => {
-                let num = tokens[0].value.unwrap();
+                let num = tokens[0].number.unwrap();
                 tokens.remove(0);
                 return Node::number(num);
             }
