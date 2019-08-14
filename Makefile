@@ -1,4 +1,5 @@
 test:
+	cargo test
 	./test.sh
 
 clean:

@@ -82,8 +82,16 @@ fn consume_number(input: &mut String) -> Option<Token> {
 }
 
 fn consume_operator(input: &mut String) -> Option<Token> {
+    if input.starts_with("==") ||
+        input.starts_with("!=") ||
+        input.starts_with("<=") ||
+        input.starts_with(">=") {
+            let token = Some(Token::operator(input[..2].to_string()));
+            input.drain(0..2);
+            return token;
+        }
     match input.chars().next() {
-        Some(c) if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' => {
+        Some(c) if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '>' || c == '<' => {
             input.remove(0);
             Some(Token::operator(c.to_string()))
         }
@@ -120,6 +128,11 @@ mod tests {
         let mut input = "+12".to_string();
         let output = consume_operator(&mut input);
         assert_eq!(output, Some(Token::operator("+".to_string())));
+        assert_eq!(input, "12".to_string());
+
+        let mut input = "<=12".to_string();
+        let output = consume_operator(&mut input);
+        assert_eq!(output, Some(Token::operator("<=".to_string())));
         assert_eq!(input, "12".to_string());
     }
 
