@@ -1,5 +1,3 @@
-use std::process::exit;
-
 #[derive(Debug, Clone)]
 pub struct Token {
     pub number: Option<i64>,
@@ -29,100 +27,101 @@ impl Token {
 
     pub fn parse(input: String) -> Vec<Token> {
         let mut tokens: Vec<Token> = vec![];
+        let mut input = input;
 
-        let mut input = input.clone();
-        let mut current_token = String::from("");
-        while let Some(c) = input.chars().nth(0) {
-            if c.is_whitespace() {
-                input = input.split_off(1);
-                continue;
+        loop {
+            if input.is_empty() {
+                break;
             }
-
-            if (current_token == ">" || current_token == "<") && c != '=' {
-                let token = Token {
-                    number: None,
-                    operator: Some(current_token.clone() + &c.to_string()),
-                };
-                current_token = String::from("");
-                tokens.push(token);
-            }
-
-            if c == '=' && current_token.len() > 0 {
-                let token = Token {
-                    number: None,
-                    operator: Some(current_token.clone() + &c.to_string()),
-                };
-                current_token = String::from("");
+            consume_whitespace(&mut input);
+            if let Some(token) = consume_number(&mut input) {
                 tokens.push(token);
                 continue;
             }
-
-            if c == '=' || c == '!' || c == '<' || c == '>' {
-                current_token = c.to_string();
-                continue;
-            }
-
-            if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
-                let token = Token {
-                    number: None,
-                    operator: Some(c.to_string()),
-                };
-                input = input.split_off(1);
+            if let Some(token) = consume_operator(&mut input) {
                 tokens.push(token);
                 continue;
             }
-
-            if c.is_ascii_digit() {
-                let (num, remaining) = strtol(&input);
-                input = remaining;
-                let token = Token {
-                    number: num,
-                    operator: None,
-                };
-                tokens.push(token);
-                continue;
-            }
-
-            eprintln!("cannot tokenize: {}", c);
-            exit(1);
         }
-
-        tokens.push(Token {
-            number: None,
-            operator: None,
-        });
 
         return tokens;
     }
 }
 
-fn strtol(s: &String) -> (Option<i64>, String) {
-    if s.is_empty() {
-        return (None, s.clone());
-    }
-
-    let mut pos = 0;
-    let mut remaining = s.clone();
-    let len = s.len();
-
-    while len != pos {
-        if !s.chars().nth(pos).unwrap().is_ascii_digit() {
-            break;
+fn consume_whitespace(input: &mut String) {
+    loop {
+        match input.chars().next() {
+            Some(c) if c.is_whitespace() => {
+                input.remove(0);
+            }
+            _ => {
+                break;
+            }
         }
-        pos += 1;
     }
+}
 
-    if len == pos {
-        (Some(remaining.parse::<i64>().unwrap()), "".into())
+fn consume_number(input: &mut String) -> Option<Token> {
+    let mut digits = "".to_string();
+    loop {
+        match input.chars().next() {
+            Some(c) if c.is_ascii_digit() => {
+                digits += &c.to_string();
+                input.remove(0);
+            }
+            _ => {
+                break;
+            }
+        }
+    }
+    if digits.is_empty() {
+        None
     } else {
-        let t: String = remaining.drain(..pos).collect();
-        (Some(t.parse::<i64>().unwrap()), remaining)
+        Some(Token::number(digits.parse::<i64>().unwrap()))
+    }
+}
+
+fn consume_operator(input: &mut String) -> Option<Token> {
+    match input.chars().next() {
+        Some(c) if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' => {
+            input.remove(0);
+            Some(Token::operator(c.to_string()))
+        }
+        _ => None,
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::token::consume_number;
+    use crate::token::consume_operator;
+    use crate::token::consume_whitespace;
     use crate::token::Token;
+
+    #[test]
+    fn test_consume_whitespace() {
+        let mut input = "  ".to_string();
+        consume_whitespace(&mut input);
+        assert_eq!(input, "".to_string());
+        consume_whitespace(&mut input);
+        assert_eq!(input, "".to_string());
+    }
+
+    #[test]
+    fn test_consume_number() {
+        let mut input = "12+".to_string();
+        let output = consume_number(&mut input);
+        assert_eq!(output, Some(Token::number(12)));
+        assert_eq!(input, "+".to_string());
+    }
+
+    #[test]
+    fn test_consume_operator() {
+        let mut input = "+12".to_string();
+        let output = consume_operator(&mut input);
+        assert_eq!(output, Some(Token::operator("+".to_string())));
+        assert_eq!(input, "12".to_string());
+    }
 
     #[test]
     fn plus() {
