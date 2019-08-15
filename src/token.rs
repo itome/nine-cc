@@ -2,6 +2,7 @@
 pub struct Token {
     pub number: Option<i64>,
     pub operator: Option<String>,
+    pub ident: Option<String>,
 }
 
 impl PartialEq for Token {
@@ -15,6 +16,7 @@ impl Token {
         Token {
             number: None,
             operator: Some(op),
+            ident: None,
         }
     }
 
@@ -22,6 +24,15 @@ impl Token {
         Token {
             number: Some(num),
             operator: None,
+            ident: None,
+        }
+    }
+
+    fn ident(ident: String) -> Self {
+        Token {
+            number: None,
+            operator: None,
+            ident: Some(ident),
         }
     }
 
@@ -39,6 +50,10 @@ impl Token {
                 continue;
             }
             if let Some(token) = consume_operator(&mut input) {
+                tokens.push(token);
+                continue;
+            }
+            if let Some(token) = consume_ident(&mut input) {
                 tokens.push(token);
                 continue;
             }
@@ -82,16 +97,26 @@ fn consume_number(input: &mut String) -> Option<Token> {
 }
 
 fn consume_operator(input: &mut String) -> Option<Token> {
-    if input.starts_with("==") ||
-        input.starts_with("!=") ||
-        input.starts_with("<=") ||
-        input.starts_with(">=") {
-            let token = Some(Token::operator(input[..2].to_string()));
-            input.drain(0..2);
-            return token;
-        }
+    if input.starts_with("==")
+        || input.starts_with("!=")
+        || input.starts_with("<=")
+        || input.starts_with(">=")
+    {
+        let token = Some(Token::operator(input[..2].to_string()));
+        input.drain(0..2);
+        return token;
+    }
     match input.chars().next() {
-        Some(c) if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '>' || c == '<' => {
+        Some(c)
+            if c == '+'
+                || c == '-'
+                || c == '*'
+                || c == '/'
+                || c == '('
+                || c == ')'
+                || c == '>'
+                || c == '<' =>
+        {
             input.remove(0);
             Some(Token::operator(c.to_string()))
         }
@@ -99,8 +124,19 @@ fn consume_operator(input: &mut String) -> Option<Token> {
     }
 }
 
+fn consume_ident(input: &mut String) -> Option<Token> {
+    match input.chars().next() {
+        Some(c) if c.is_ascii_alphabetic() => {
+            input.remove(0);
+            Some(Token::ident(c.to_string()))
+        }
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::token::consume_ident;
     use crate::token::consume_number;
     use crate::token::consume_operator;
     use crate::token::consume_whitespace;
@@ -121,6 +157,20 @@ mod tests {
         let output = consume_number(&mut input);
         assert_eq!(output, Some(Token::number(12)));
         assert_eq!(input, "+".to_string());
+    }
+
+    #[test]
+    fn test_consume_ident() {
+        let mut input = "ab12".to_string();
+        let output = consume_ident(&mut input);
+        assert_eq!(output, Some(Token::ident("a".to_string())));
+        assert_eq!(input, "b12".to_string());
+        let output = consume_ident(&mut input);
+        assert_eq!(output, Some(Token::ident("b".to_string())));
+        assert_eq!(input, "12".to_string());
+        let output = consume_ident(&mut input);
+        assert_eq!(output, None);
+        assert_eq!(input, "12".to_string());
     }
 
     #[test]
