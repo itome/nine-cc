@@ -9,8 +9,16 @@ pub struct Node {
     pub offset: Option<usize>,
 }
 
-impl Node {
-    fn operator(op: String, lhs: Node, rhs: Node) -> Self {
+pub struct Parser {
+    current_offset: usize
+}
+
+impl Parser {
+    pub fn new() -> Self {
+        return Parser { current_offset: 0 };
+    }
+
+    fn operator(op: String, lhs: Node, rhs: Node) -> Node {
         Node {
             lhs: Some(Box::new(lhs)),
             rhs: Some(Box::new(rhs)),
@@ -20,7 +28,7 @@ impl Node {
         }
     }
 
-    fn number(num: i64) -> Self {
+    fn number(num: i64) -> Node {
         Node {
             lhs: None,
             rhs: None,
@@ -30,7 +38,7 @@ impl Node {
         }
     }
 
-    fn ident(ident: String) -> Self {
+    fn ident(ident: String) -> Node {
         let alphabet: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
         let index = alphabet.iter().position(|&c| c == ident.chars().next().unwrap()).unwrap();
         Node {
@@ -42,39 +50,39 @@ impl Node {
         }
     }
 
-    pub fn program(tokens: &mut Vec<Token>) -> Vec<Self> {
+    pub fn program(self: &Self, tokens: &mut Vec<Token>) -> Vec<Node> {
         let mut nodes: Vec<Node> = vec!();
         while !tokens.is_empty() {
-            nodes.push(Node::stmt(tokens));
+            nodes.push(self.stmt(tokens));
         };
         return nodes;
     }
 
-    fn stmt(tokens: &mut Vec<Token>) -> Self {
-        let node = Node::expr(tokens);
+    fn stmt(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        let node = self.expr(tokens);
         tokens.remove(0);
         return node;
     }
 
-    fn expr(tokens: &mut Vec<Token>) -> Self {
-        return Node::assign(tokens);
+    fn expr(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        return self.assign(tokens);
     }
 
-    fn assign(tokens: &mut Vec<Token>) -> Self {
-        let mut node = Node::equality(tokens);
+    fn assign(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        let mut node = self.equality(tokens);
         match &tokens.first() {
             Some(token) if token.operator == Some("=".to_string()) => {
                 tokens.remove(0);
-                let rhs = Node::assign(tokens);
-                node = Node::operator("=".to_string(), node, rhs)
+                let rhs = self.assign(tokens);
+                node = Parser::operator("=".to_string(), node, rhs)
             }
             _ => {}
         }
         return node;
     }
 
-    fn equality(tokens: &mut Vec<Token>) -> Self {
-        let mut node = Node::relational(tokens);
+    fn equality(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        let mut node = self.relational(tokens);
 
         loop {
             if tokens.len() == 0 {
@@ -85,13 +93,13 @@ impl Node {
                 Some(op) => match op.as_ref() {
                     "==" => {
                         tokens.remove(0);
-                        let rhs = Node::relational(tokens);
-                        node = Node::operator("==".to_string(), node, rhs);
+                        let rhs = self.relational(tokens);
+                        node = Parser::operator("==".to_string(), node, rhs);
                     }
                     "!=" => {
                         tokens.remove(0);
-                        let rhs = Node::relational(tokens);
-                        node = Node::operator("!=".to_string(), node, rhs);
+                        let rhs = self.relational(tokens);
+                        node = Parser::operator("!=".to_string(), node, rhs);
                     }
                     _ => {
                         break;
@@ -105,8 +113,8 @@ impl Node {
         return node;
     }
 
-    fn relational(tokens: &mut Vec<Token>) -> Self {
-        let mut node = Node::add(tokens);
+    fn relational(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        let mut node = self.add(tokens);
 
         loop {
             if tokens.len() == 0 {
@@ -117,23 +125,23 @@ impl Node {
                 Some(op) => match op.as_ref() {
                     "<" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("<".to_string(), node, rhs);
+                        let rhs = self.mul(tokens);
+                        node = Parser::operator("<".to_string(), node, rhs);
                     }
                     "<=" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("<=".to_string(), node, rhs);
+                        let rhs = self.mul(tokens);
+                        node = Parser::operator("<=".to_string(), node, rhs);
                     }
                     ">" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("<".to_string(), rhs, node);
+                        let rhs = self.mul(tokens);
+                        node = Parser::operator("<".to_string(), rhs, node);
                     }
                     ">=" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("<=".to_string(), rhs, node);
+                        let rhs = self.mul(tokens);
+                        node = Parser::operator("<=".to_string(), rhs, node);
                     }
                     _ => {
                         break;
@@ -147,8 +155,8 @@ impl Node {
         return node;
     }
 
-    fn add(tokens: &mut Vec<Token>) -> Self {
-        let mut node = Node::mul(tokens);
+    fn add(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        let mut node = self.mul(tokens);
 
         loop {
             if tokens.len() == 0 {
@@ -159,13 +167,13 @@ impl Node {
                 Some(op) => match op.as_ref() {
                     "+" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("+".to_string(), node, rhs);
+                        let rhs = self.mul(tokens);
+                        node = Parser::operator("+".to_string(), node, rhs);
                     }
                     "-" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
-                        node = Node::operator("-".to_string(), node, rhs);
+                        let rhs = self.mul(tokens);
+                        node = Parser::operator("-".to_string(), node, rhs);
                     }
                     _ => {
                         break;
@@ -179,8 +187,8 @@ impl Node {
         return node;
     }
 
-    fn mul(tokens: &mut Vec<Token>) -> Self {
-        let mut node = Node::unary(tokens);
+    fn mul(self: &Self, tokens: &mut Vec<Token>) -> Node {
+        let mut node = self.unary(tokens);
 
         loop {
             if tokens.len() == 0 {
@@ -191,13 +199,13 @@ impl Node {
                 Some(op) => match op.as_ref() {
                     "*" => {
                         tokens.remove(0);
-                        let rhs = Node::unary(tokens);
-                        node = Node::operator("*".to_string(), node, rhs);
+                        let rhs = self.unary(tokens);
+                        node = Parser::operator("*".to_string(), node, rhs);
                     }
                     "/" => {
                         tokens.remove(0);
-                        let rhs = Node::unary(tokens);
-                        node = Node::operator("/".to_string(), node, rhs);
+                        let rhs = self.unary(tokens);
+                        node = Parser::operator("/".to_string(), node, rhs);
                     }
                     _ => {
                         break;
@@ -211,29 +219,29 @@ impl Node {
         return node;
     }
 
-    fn unary(tokens: &mut Vec<Token>) -> Self {
+    fn unary(self: &Self, tokens: &mut Vec<Token>) -> Node {
         let token = &tokens[0];
         match &token.operator {
             Some(op) => match op.as_ref() {
                 "+" => {
                     tokens.remove(0);
-                    return Node::term(tokens);
+                    return self.term(tokens);
                 }
                 "-" => {
                     tokens.remove(0);
-                    return Node::operator("-".to_string(), Node::number(0), Node::term(tokens));
+                    return Parser::operator("-".to_string(), Parser::number(0), self.term(tokens));
                 }
                 _ => {
-                    return Node::term(tokens);
+                    return self.term(tokens);
                 }
             },
             _ => {
-                return Node::term(tokens);
+                return self.term(tokens);
             }
         }
     }
 
-    fn term(tokens: &mut Vec<Token>) -> Self {
+    fn term(self: &Self, tokens: &mut Vec<Token>) -> Node {
         match &tokens[0].operator {
             Some(op) if op == "(" => {
                 let close_index = tokens
@@ -242,18 +250,18 @@ impl Node {
                     .unwrap();
                 let mut exp = tokens[1..close_index].to_vec();
                 tokens.drain(0..(close_index + 1));
-                return Node::expr(&mut exp);
+                return self.expr(&mut exp);
             }
             _ => match &tokens[0].ident {
                 Some(ident) => {
                     let ident = ident.clone();
                     tokens.remove(0);
-                    return Node::ident(ident);
+                    return Parser::ident(ident);
                 }
                 _ => {
                     let num = tokens[0].number.unwrap();
                     tokens.remove(0);
-                    return Node::number(num);
+                    return Parser::number(num);
                 }
             },
         }
