@@ -6,7 +6,7 @@ pub struct Node {
     pub rhs: Option<Box<Node>>,
     pub number: Option<i64>,
     pub operator: Option<String>,
-    pub ident: Option<String>,
+    pub offset: Option<usize>,
 }
 
 impl Node {
@@ -16,7 +16,7 @@ impl Node {
             rhs: Some(Box::new(rhs)),
             number: None,
             operator: Some(op),
-            ident: None,
+            offset: None,
         }
     }
 
@@ -26,17 +26,19 @@ impl Node {
             rhs: None,
             number: Some(num),
             operator: None,
-            ident: None,
+            offset: None,
         }
     }
 
     fn ident(ident: String) -> Self {
+        let alphabet: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
+        let index = alphabet.iter().position(|&c| c == ident.chars().next().unwrap()).unwrap();
         Node {
             lhs: None,
             rhs: None,
             number: None,
             operator: None,
-            ident: Some(ident),
+            offset: Some((index + 1) * 8),
         }
     }
 
