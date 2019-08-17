@@ -127,12 +127,22 @@ fn consume_operator(input: &mut String) -> Option<Token> {
 }
 
 fn consume_ident(input: &mut String) -> Option<Token> {
-    match input.chars().next() {
-        Some(c) if c.is_ascii_alphabetic() => {
-            input.remove(0);
-            Some(Token::ident(c.to_string()))
+    let mut chars = "".to_string();
+    loop {
+        match input.chars().next() {
+            Some(c) if c.is_ascii_alphabetic() => {
+                chars += &c.to_string();
+                input.remove(0);
+            }
+            _ => {
+                break;
+            }
         }
-        _ => None,
+    }
+    if chars.is_empty() {
+        None
+    } else {
+        Some(Token::ident(chars))
     }
 }
 
@@ -165,10 +175,7 @@ mod tests {
     fn test_consume_ident() {
         let mut input = "ab12".to_string();
         let output = consume_ident(&mut input);
-        assert_eq!(output, Some(Token::ident("a".to_string())));
-        assert_eq!(input, "b12".to_string());
-        let output = consume_ident(&mut input);
-        assert_eq!(output, Some(Token::ident("b".to_string())));
+        assert_eq!(output, Some(Token::ident("ab".to_string())));
         assert_eq!(input, "12".to_string());
         let output = consume_ident(&mut input);
         assert_eq!(output, None);
