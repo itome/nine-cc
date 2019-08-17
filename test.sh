@@ -12,7 +12,7 @@ try() {
     actual="$?"
 
     if [ "$actual" != "$expected" ]; then
-        echo "$input expected, but got $actual"
+        echo "$input $expected, but got $actual"
         exit 1
     fi
 }
@@ -29,7 +29,6 @@ try 4 '(3+5)/2;'
 try 5 '+5;'
 try 5 '12+(-7);'
 try 5 '20+(-3*5);'
-
 try 1 '5==5;'
 try 1 '5<=5;'
 try 1 '4 < 5;'
@@ -37,5 +36,11 @@ try 0 '7 < 5;'
 try 1 '7 > 5;'
 try 0 '4 > 5;'
 try 0 '12+3 != 20-5;'
+try 15 'a = 5; b = 10; a + b;'
+try 1 '
+a = 10;
+b = 10;
+a == b;
+'
 
 echo OK

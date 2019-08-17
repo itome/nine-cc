@@ -1,29 +1,69 @@
 use crate::node::Node;
 
-pub fn generate_program(program: &Vec<Node>) -> Vec<String> {
+pub fn gen_program(program: &Vec<Node>) -> Vec<String> {
     let mut assembly: Vec<String> = vec!();
     assembly.push(".intel_syntax noprefix".to_string());
     assembly.push(".global main".to_string());
     assembly.push("main:".to_string());
+    assembly.push("  push rbp".to_string());
+    assembly.push("  mov rbp, rsp".to_string());
+    assembly.push("  sub rsp, 208".to_string());
     for stmt in program {
-        assembly.append(&mut generate(&stmt));
+        assembly.append(&mut gen(&stmt));
+        assembly.push("  pop rax".to_string());
     }
-    assembly.push("  pop rax".to_string());
+    assembly.push("  mov rsp, rbp".to_string());
+    assembly.push("  pop rbp".to_string());
     assembly.push("  ret".to_string());
     return assembly;
 }
 
-fn generate(node: &Node) -> Vec<String> {
+fn gen_lval(node: &Node) -> Vec<String> {
+    let mut assembly: Vec<String> = vec!();
+    match node.offset {
+        Some(offset) => {
+            assembly.push("  mov rax, rbp".to_string());
+            assembly.push(format!("  sub rax, {}", offset));
+            assembly.push("  push rax".to_string());
+        }
+        _ => {
+            panic!("The lvalue of the assignment is not a variable")
+        }
+    }
+    return assembly;
+}
+
+fn gen(node: &Node) -> Vec<String> {
     let mut assembly: Vec<String> = vec!();
     if let Some(num) = node.number {
         assembly.push(format!("  push {}", num));
         return assembly;
     }
+    if let Some(_) = node.offset {
+        assembly.append(&mut gen_lval(node));
+        assembly.push("  pop rax".to_string());
+        assembly.push("  mov rax, [rax]".to_string());
+        assembly.push("  push rax".to_string());
+        return assembly;
+    }
+    if node.operator == Some("=".to_string()) {
+        if let Some(lhs) = &node.lhs {
+            assembly.append(&mut gen_lval(&lhs));
+        }
+        if let Some(rhs) = &node.rhs {
+            assembly.append(&mut gen(&rhs));
+        }
+        assembly.push("  pop rdi".to_string());
+        assembly.push("  pop rax".to_string());
+        assembly.push("  mov [rax], rdi".to_string());
+        assembly.push("  push rdi".to_string());
+        return assembly;
+    }
     if let Some(rhs) = &node.rhs {
-        assembly.append(&mut generate(&rhs));
+        assembly.append(&mut gen(&rhs));
     }
     if let Some(lhs) = &node.lhs {
-        assembly.append(&mut generate(&lhs));
+        assembly.append(&mut gen(&lhs));
     }
     assembly.push("  pop rax".to_string());
     assembly.push("  pop rdi".to_string());
