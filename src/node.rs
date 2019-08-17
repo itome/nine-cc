@@ -43,12 +43,12 @@ impl Node {
                 Some(op) => match op.as_ref() {
                     "==" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
+                        let rhs = Node::relational(tokens);
                         node = Node::operator("==".to_string(), node, rhs);
                     }
                     "!=" => {
                         tokens.remove(0);
-                        let rhs = Node::mul(tokens);
+                        let rhs = Node::relational(tokens);
                         node = Node::operator("!=".to_string(), node, rhs);
                     }
                     _ => {
