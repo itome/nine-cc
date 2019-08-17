@@ -6,6 +6,7 @@ pub struct Node {
     pub rhs: Option<Box<Node>>,
     pub number: Option<i64>,
     pub operator: Option<String>,
+    pub ident: Option<String>,
 }
 
 impl Node {
@@ -15,6 +16,7 @@ impl Node {
             rhs: Some(Box::new(rhs)),
             number: None,
             operator: Some(op),
+            ident: None,
         }
     }
 
@@ -24,11 +26,49 @@ impl Node {
             rhs: None,
             number: Some(num),
             operator: None,
+            ident: None,
         }
     }
 
-    pub fn expr(tokens: &mut Vec<Token>) -> Self {
-        return Node::equality(tokens);
+    fn ident(ident: String) -> Self {
+        Node {
+            lhs: None,
+            rhs: None,
+            number: None,
+            operator: None,
+            ident: Some(ident),
+        }
+    }
+
+    pub fn program(tokens: &mut Vec<Token>) -> Vec<Self> {
+        let mut nodes: Vec<Node> = vec!();
+        while !tokens.is_empty() {
+            nodes.push(Node::stmt(tokens));
+        };
+        return nodes;
+    }
+
+    fn stmt(tokens: &mut Vec<Token>) -> Self {
+        let node = Node::expr(tokens);
+        tokens.remove(0);
+        return node;
+    }
+
+    fn expr(tokens: &mut Vec<Token>) -> Self {
+        return Node::assign(tokens);
+    }
+
+    fn assign(tokens: &mut Vec<Token>) -> Self {
+        let mut node = Node::equality(tokens);
+        match &tokens.first() {
+            Some(token) if token.operator == Some("=".to_string()) => {
+                tokens.remove(0);
+                let rhs = Node::assign(tokens);
+                node = Node::operator("=".to_string(), node, rhs)
+            }
+            _ => {}
+        }
+        return node;
     }
 
     fn equality(tokens: &mut Vec<Token>) -> Self {
@@ -193,15 +233,20 @@ impl Node {
 
     fn term(tokens: &mut Vec<Token>) -> Self {
         match &tokens[0].operator {
-            Some(op) => match op.as_ref() {
-                "(" => {
-                    let close_index = tokens
-                        .iter()
-                        .position(|token| token.operator == Some(")".to_string()))
-                        .unwrap();
-                    let mut exp = tokens[1..close_index].to_vec();
-                    tokens.drain(0..(close_index + 1));
-                    return Node::expr(&mut exp);
+            Some(op) if op == "(" => {
+                let close_index = tokens
+                    .iter()
+                    .position(|token| token.operator == Some(")".to_string()))
+                    .unwrap();
+                let mut exp = tokens[1..close_index].to_vec();
+                tokens.drain(0..(close_index + 1));
+                return Node::expr(&mut exp);
+            }
+            _ => match &tokens[0].ident {
+                Some(ident) => {
+                    let ident = ident.clone();
+                    tokens.remove(0);
+                    return Node::ident(ident);
                 }
                 _ => {
                     let num = tokens[0].number.unwrap();
@@ -209,11 +254,6 @@ impl Node {
                     return Node::number(num);
                 }
             },
-            _ => {
-                let num = tokens[0].number.unwrap();
-                tokens.remove(0);
-                return Node::number(num);
-            }
         }
     }
 }

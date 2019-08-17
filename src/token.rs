@@ -115,7 +115,8 @@ fn consume_operator(input: &mut String) -> Option<Token> {
                 || c == '('
                 || c == ')'
                 || c == '>'
-                || c == '<' =>
+                || c == '<'
+                || c == ';' =>
         {
             input.remove(0);
             Some(Token::operator(c.to_string()))

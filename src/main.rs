@@ -66,11 +66,13 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let arg: &String = &args[1];
     let mut tokens = Token::parse(arg.to_string());
-    let expr = Node::expr(&mut tokens);
+    let program = Node::program(&mut tokens);
     println!(".intel_syntax noprefix");
     println!(".global main");
     println!("main:");
-    gen(&expr);
+    for stmt in program {
+        gen(&stmt);
+    }
     println!("  pop rax");
     println!("  ret");
 }
