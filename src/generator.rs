@@ -9,8 +9,12 @@ pub fn gen_program(program: &Vec<Node>) -> Vec<String> {
     assembly.push("  mov rbp, rsp".to_string());
     assembly.push("  sub rsp, 208".to_string());
     for stmt in program {
-        assembly.append(&mut gen(&stmt));
+        let (generated, returned) = &mut gen(&stmt);
+        assembly.append(generated);
         assembly.push("  pop rax".to_string());
+        if *returned {
+            break;
+        }
     }
     assembly.push("  mov rsp, rbp".to_string());
     assembly.push("  pop rbp".to_string());
@@ -33,37 +37,47 @@ fn gen_lval(node: &Node) -> Vec<String> {
     return assembly;
 }
 
-fn gen(node: &Node) -> Vec<String> {
+fn gen(node: &Node) -> (Vec<String>, bool) {
     let mut assembly: Vec<String> = vec!();
     if let Some(num) = node.number {
         assembly.push(format!("  push {}", num));
-        return assembly;
+        return (assembly, false);
     }
     if let Some(_) = node.offset {
         assembly.append(&mut gen_lval(node));
         assembly.push("  pop rax".to_string());
         assembly.push("  mov rax, [rax]".to_string());
         assembly.push("  push rax".to_string());
-        return assembly;
+        return (assembly, false);
+    }
+    if node.operator == Some("return".to_string()) {
+        if let Some(lhs) = &node.lhs {
+            let (generated, _) = &mut gen(&lhs);
+            assembly.append(generated);
+        }
+        return (assembly, true);
     }
     if node.operator == Some("=".to_string()) {
         if let Some(lhs) = &node.lhs {
             assembly.append(&mut gen_lval(&lhs));
         }
         if let Some(rhs) = &node.rhs {
-            assembly.append(&mut gen(&rhs));
+            let (generated, _) = &mut gen(&rhs);
+            assembly.append(generated);
         }
         assembly.push("  pop rdi".to_string());
         assembly.push("  pop rax".to_string());
         assembly.push("  mov [rax], rdi".to_string());
         assembly.push("  push rdi".to_string());
-        return assembly;
+        return (assembly, false);
     }
     if let Some(rhs) = &node.rhs {
-        assembly.append(&mut gen(&rhs));
+        let (generated, _) = &mut gen(&rhs);
+        assembly.append(generated);
     }
     if let Some(lhs) = &node.lhs {
-        assembly.append(&mut gen(&lhs));
+        let (generated, _) = &mut gen(&lhs);
+        assembly.append(generated);
     }
     assembly.push("  pop rax".to_string());
     assembly.push("  pop rdi".to_string());
@@ -108,5 +122,5 @@ fn gen(node: &Node) -> Vec<String> {
         _ => {}
     }
     assembly.push("  push rax".to_string());
-    return assembly;
+    return (assembly, false);
 }

@@ -47,5 +47,10 @@ abc = 10;
 def = 10;
 abc == def;
 '
+try 5 'return 5;'
+try 5 '
+return 5;
+return 10;
+'
 
 echo OK

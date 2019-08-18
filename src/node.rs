@@ -39,6 +39,16 @@ impl Parser {
         }
     }
 
+    fn ret(lhs: Node) -> Node {
+        Node {
+            lhs: Some(Box::new(lhs)),
+            rhs: None,
+            number: None,
+            operator: Some("return".to_string()),
+            offset: None,
+        }
+    }
+
     fn number(num: i64) -> Node {
         Node {
             lhs: None,
@@ -68,7 +78,15 @@ impl Parser {
     }
 
     fn stmt(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
-        let node = self.expr(tokens);
+        let node = match tokens.first() {
+            Some(token) if token.operator == Some("return".to_string()) => {
+                tokens.remove(0);
+                Parser::ret(self.expr(tokens))
+            }
+            _ => {
+                self.expr(tokens)
+            }
+        };
         tokens.remove(0);
         return node;
     }
