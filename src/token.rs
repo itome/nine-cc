@@ -97,6 +97,11 @@ fn consume_number(input: &mut String) -> Option<Token> {
 }
 
 fn consume_operator(input: &mut String) -> Option<Token> {
+    if input.starts_with("return") {
+        let token = Some(Token::operator(input[..6].to_string()));
+        input.drain(0..6);
+        return token;
+    }
     if input.starts_with("==")
         || input.starts_with("!=")
         || input.starts_with("<=")
@@ -193,6 +198,11 @@ mod tests {
         let output = consume_operator(&mut input);
         assert_eq!(output, Some(Token::operator("<=".to_string())));
         assert_eq!(input, "12".to_string());
+
+        let mut input = "return 5".to_string();
+        let output = consume_operator(&mut input);
+        assert_eq!(output, Some(Token::operator("return".to_string())));
+        assert_eq!(input, " 5".to_string());
     }
 
     #[test]
