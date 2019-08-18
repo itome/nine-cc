@@ -42,5 +42,10 @@ a = 10;
 b = 10;
 a == b;
 '
+try 1 '
+abc = 10;
+def = 10;
+abc == def;
+'
 
 echo OK

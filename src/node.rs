@@ -9,13 +9,24 @@ pub struct Node {
     pub offset: Option<usize>,
 }
 
+struct LVar {
+    name: String,
+    offset: usize,
+}
+
+impl LVar {
+    fn new(name: String, offset: usize) -> Self {
+        LVar { name: name, offset: offset }
+    }
+}
+
 pub struct Parser {
-    current_offset: usize
+    lvars: Vec<LVar>,
 }
 
 impl Parser {
     pub fn new() -> Self {
-        return Parser { current_offset: 0 };
+        return Parser { lvars: vec!() };
     }
 
     fn operator(op: String, lhs: Node, rhs: Node) -> Node {
@@ -38,37 +49,35 @@ impl Parser {
         }
     }
 
-    fn ident(ident: String) -> Node {
-        let alphabet: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
-        let index = alphabet.iter().position(|&c| c == ident.chars().next().unwrap()).unwrap();
+    fn ident(offset: usize) -> Node {
         Node {
             lhs: None,
             rhs: None,
             number: None,
             operator: None,
-            offset: Some((index + 1) * 8),
+            offset: Some(offset),
         }
     }
 
-    pub fn program(self: &Self, tokens: &mut Vec<Token>) -> Vec<Node> {
-        let mut nodes: Vec<Node> = vec!();
+    pub fn program(self: &mut Parser, tokens: &mut Vec<Token>) -> Vec<Node> {
+        let mut nodes: Vec<Node> = vec![];
         while !tokens.is_empty() {
             nodes.push(self.stmt(tokens));
-        };
+        }
         return nodes;
     }
 
-    fn stmt(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn stmt(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let node = self.expr(tokens);
         tokens.remove(0);
         return node;
     }
 
-    fn expr(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn expr(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         return self.assign(tokens);
     }
 
-    fn assign(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn assign(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let mut node = self.equality(tokens);
         match &tokens.first() {
             Some(token) if token.operator == Some("=".to_string()) => {
@@ -81,7 +90,7 @@ impl Parser {
         return node;
     }
 
-    fn equality(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn equality(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let mut node = self.relational(tokens);
 
         loop {
@@ -113,7 +122,7 @@ impl Parser {
         return node;
     }
 
-    fn relational(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn relational(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let mut node = self.add(tokens);
 
         loop {
@@ -155,7 +164,7 @@ impl Parser {
         return node;
     }
 
-    fn add(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn add(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let mut node = self.mul(tokens);
 
         loop {
@@ -187,7 +196,7 @@ impl Parser {
         return node;
     }
 
-    fn mul(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn mul(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let mut node = self.unary(tokens);
 
         loop {
@@ -219,7 +228,7 @@ impl Parser {
         return node;
     }
 
-    fn unary(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn unary(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         let token = &tokens[0];
         match &token.operator {
             Some(op) => match op.as_ref() {
@@ -241,7 +250,7 @@ impl Parser {
         }
     }
 
-    fn term(self: &Self, tokens: &mut Vec<Token>) -> Node {
+    fn term(self: &mut Parser, tokens: &mut Vec<Token>) -> Node {
         match &tokens[0].operator {
             Some(op) if op == "(" => {
                 let close_index = tokens
@@ -254,9 +263,14 @@ impl Parser {
             }
             _ => match &tokens[0].ident {
                 Some(ident) => {
-                    let ident = ident.clone();
+                    let ident1 = ident.clone();
+                    let ident2 = ident.clone();
                     tokens.remove(0);
-                    return Parser::ident(ident);
+                    if !self.lvars.iter().any(|l| l.name == ident1) {
+                        self.lvars.push(LVar::new(ident1, (self.lvars.len() + 1) * 8));
+                    }
+
+                    return Parser::ident(self.lvars.iter().find(|l| l.name == ident2).unwrap().offset);
                 }
                 _ => {
                     let num = tokens[0].number.unwrap();
